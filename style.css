@@ -1,0 +1,434 @@
+  /* Reset some defaults */
+  * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      
+      background: #f0f4f8;
+      color: #333;
+    }
+    .box{
+
+      margin: 50px;
+      
+      margin-left: 300px;
+      margin-right: 300px;
+    }
+
+    .table{
+
+      margin: 50px;
+    }
+    
+    /* Form Container */
+    form {
+      background: #ffffff;
+      padding: 30px 25px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+      transition: box-shadow 0.3s ease;
+    }
+    
+    form:hover {
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Inputs */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0 20px;
+      border: 1.8px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
+    
+    /* Buttons */
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+    }
+    
+    button:hover {
+      background-color: #0056b3;
+      box-shadow: 0 6px 15px rgba(0, 86, 179, 0.6);
+    }
+    
+    /* Error Messages */
+    .error {
+      background: #fdecea;
+      color: #d93025;
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-weight: 600;
+      box-shadow: inset 0 0 8px rgba(217, 48, 37, 0.15);
+    }
+    
+    /* Toggle Links */
+    .toggle-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.95rem;
+      color: #555;
+      user-select: none;
+    }
+    
+    .toggle-link a {
+      color: #007BFF;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    
+    .toggle-link a:hover {
+      text-decoration: underline;
+      color: #0056b3;
+    }
+    
+    /* Hidden class */
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Table Styles for dashboard/products */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+    
+    th,
+    td {
+      padding: 14px 20px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    
+    th {
+      background-color: #f7f9fc;
+      font-weight: 700;
+      color: #444;
+    }
+    
+    tr:hover {
+      background-color: #f1faff;
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 8px 16px;
+      text-decoration: none;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 3px 8px rgba(0, 123, 255, 0.4);
+      cursor: pointer;
+      border: none;
+    }
+    
+    .button:hover {
+      background-color: #0056b3;
+      box-shadow: 0 5px 15px rgba(0, 86, 179, 0.6);
+    }
+    
+    /* Responsive tweaks */
+    @media (max-width: 480px) {
+      body {
+        padding: 15px;
+      }
+      form {
+        padding: 20px 15px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="number"] {
+        padding: 10px 12px;
+        margin-bottom: 15px;
+      }
+      button {
+        font-size: 1rem;
+        padding: 10px;
+      }
+      table,
+      th,
+      td {
+        font-size: 0.85rem;
+      }
+    }
+    
+
+    /* NAVBAR */
+  .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #003366;
+      padding: 12px 24px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .company-name {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 1.2px;
+    }
+    
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .icon-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      position: relative;
+      padding: 6px;
+      border-radius: 4px;
+      transition: background-color 0.25s ease;
+    }
+    
+    .icon-button:hover,
+    .icon-button:focus {
+      background-color: rgba(255,255,255,0.2);
+      outline: none;
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: #dc3545;
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 5px;
+      border-radius: 12px;
+      font-weight: 700;
+      line-height: 1;
+      user-select: none;
+    }
+    
+    
+
+
+    /* Reset some default styles */
+  body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* NAVBAR styles (from before, keep them!) */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #003366;
+      padding: 12px 24px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      z-index: 1000;
+    }
+    
+    .company-name {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 1.2px;
+    }
+    
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .icon-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      position: relative;
+      padding: 6px;
+      border-radius: 4px;
+      transition: background-color 0.25s ease;
+    }
+    
+    .icon-button:hover,
+    .icon-button:focus {
+      background-color: rgba(255,255,255,0.2);
+      outline: none;
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: #dc3545;
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 5px;
+      border-radius: 12px;
+      font-weight: 700;
+      line-height: 1;
+      user-select: none;
+    }
+    
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 56px; /* height of navbar */
+      left: 0;
+      width: 220px;
+      height: calc(100% - 56px);
+      background-color: #0b3d91;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px 0;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      z-index: 999;
+    }
+    
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .sidebar-menu li {
+      margin: 0;
+    }
+    
+    .sidebar-menu li a {
+      display: flex;
+      align-items: center;
+      padding: 12px 24px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+    
+    .sidebar-menu li a:hover,
+    .sidebar-menu li a:focus {
+      background-color: #063970;
+      outline: none;
+    }
+    
+    .menu-icon {
+      margin-right: 12px;
+      font-size: 1.2rem;
+    }
+    
+    /* Separate logout to bottom */
+    .logout-menu {
+      margin-top: auto;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: 220px; /* width of sidebar */
+      padding: 80px 24px 24px; /* top padding includes navbar height */
+      min-height: 100vh;
+      background-color: #f9f9f9;
+    }
+    
+    /* Table & buttons styles (keep yours or add as needed) */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .action-link {
+      color: #003366;
+      text-decoration: none;
+      margin-right: 8px;
+    }
+    
+    .action-link.delete-link {
+      color: #d9534f;
+    }
+    
+    .action-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 60px;
+        padding: 20px 0;
+      }
+      .sidebar-menu li a {
+        justify-content: center;
+        padding: 12px 0;
+        font-size: 0;
+      }
+      .menu-icon {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+      .main-content {
+        margin-left: 60px;
+        padding: 80px 12px 12px;
+      }
+    }
+    
