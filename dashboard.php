@@ -71,17 +71,49 @@ if ($action === 'edit' && isset($_GET['id'])) {
 }
 
 // Default: Fetch all products for the logged-in user
+// Default: Fetch all products for the logged-in user
 if ($action === '') {
-    // MODIFIED QUERY: Use a LEFT JOIN to get the category name
-    $stmt = $pdo->prepare("
-        SELECT p.*, c.name AS category_name 
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
-        WHERE p.created_by = :uid 
-        ORDER BY p.created_at DESC
-    ");
-    $stmt->execute(['uid' => $user_id]);
-    $products = $stmt->fetchAll();
+  // --- NEW SORTING LOGIC ---
+  
+  // 1. Whitelist of allowed columns for sorting
+  $allowed_sort_cols = [
+      'name' => 'p.name',
+      'category' => 'c.name',
+      'price' => 'p.price',
+      'created_at' => 'p.created_at'
+  ];
+
+  // 2. Get sort parameters from URL, with defaults
+  $sort_key = $_GET['sort'] ?? 'created_at';
+  $order_key = $_GET['order'] ?? 'desc';
+
+  // 3. Validate and set the SQL sort column
+  if (!array_key_exists($sort_key, $allowed_sort_cols)) {
+      $sort_key = 'created_at'; // Default to created_at
+  }
+  $sort_sql_col = $allowed_sort_cols[$sort_key];
+
+  // 4. Validate and set the SQL sort order
+  $order = strtoupper($order_key);
+  if ($order !== 'ASC' && $order !== 'DESC') {
+      $order = 'DESC'; // Default to DESC
+  }
+
+  // 5. Determine the *next* order for the links
+  $next_order = ($order === 'ASC') ? 'desc' : 'asc';
+  
+  // --- END NEW SORTING LOGIC ---
+
+  // MODIFIED QUERY: Use a LEFT JOIN and the dynamic $order_by_sql
+  $stmt = $pdo->prepare("
+      SELECT p.*, c.name AS category_name 
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.created_by = :uid 
+      ORDER BY $sort_sql_col $order
+  ");
+  $stmt->execute(['uid' => $user_id]);
+  $products = $stmt->fetchAll();
 }
 ?>
 
@@ -195,10 +227,22 @@ if ($action === '') {
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Category</th>
-          <th>Price</th>
-          <th>Created At</th>
+          <?php
+          function sort_link($column, $text, $current_sort, $current_order, $next_order) {
+              $arrow = '';
+              $order_for_link = 'asc';
+              if ($column === $current_sort) {
+                  $order_for_link = $next_order;
+                  $arrow = ($current_order === 'ASC') ? '&uarr;' : '&darr;'; // Up/Down arrow
+              }
+              echo "<th><a href=\"?sort=$column&order=$order_for_link\">$text $arrow</a></th>";
+          }
+          
+          sort_link('name', 'Name', $sort_key, $order, $next_order);
+          sort_link('category', 'Category', $sort_key, $order, $next_order);
+          sort_link('price', 'Price', $sort_key, $order, $next_order);
+          sort_link('created_at', 'Created At', $sort_key, $order, $next_order);
+          ?>
           <th>Actions</th>
         </tr>
       </thead>

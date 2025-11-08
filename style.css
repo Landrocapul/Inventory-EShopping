@@ -410,6 +410,16 @@
     .action-link:hover {
       text-decoration: underline;
     }
+    /* Style for sortable table headers */
+th a {
+  text-decoration: none;
+  color: inherit; /* Use the default header color */
+  display: block; /* Make the whole header clickable */
+}
+
+th a:hover {
+  color: #007BFF; /* Highlight on hover */
+}
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
@@ -431,4 +441,5 @@
         padding: 80px 12px 12px;
       }
     }
+    
     
