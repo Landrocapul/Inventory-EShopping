@@ -877,7 +877,7 @@ if ($action === '') {
   <!-- Sales Analytics Cards -->
   <div class="row g-4 mb-4">
     <div class="col-xl-3 col-lg-6 col-md-6">
-      <div class="card h-100" style="border-top: 4px solid #e74c3c;">
+      <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
             <i class="fas fa-dollar-sign fa-2x text-danger"></i>
@@ -890,7 +890,7 @@ if ($action === '') {
     </div>
     
     <div class="col-xl-3 col-lg-6 col-md-6">
-      <div class="card h-100" style="border-top: 4px solid #e74c3c;">
+      <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
             <i class="fas fa-shopping-cart fa-2x text-danger"></i>
@@ -903,7 +903,7 @@ if ($action === '') {
     </div>
     
     <div class="col-xl-3 col-lg-6 col-md-6">
-      <div class="card h-100" style="border-top: 4px solid #e74c3c;">
+      <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
             <i class="fas fa-calculator fa-2x text-danger"></i>
@@ -916,7 +916,7 @@ if ($action === '') {
     </div>
     
     <div class="col-xl-3 col-lg-6 col-md-6">
-      <div class="card h-100" style="border-top: 4px solid #e74c3c;">
+      <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
             <i class="fas fa-chart-line fa-2x text-danger"></i>
