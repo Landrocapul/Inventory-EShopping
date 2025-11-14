@@ -3,19 +3,19 @@
    ================================= */
    :root {
     /* Light theme */
-    --bg-color: #f8f9fa;
-    --text-color: #212529;
+    --bg-color: #f0f0f0;  /* Light gray background */
+    --text-color: #252525;  /* Dark gray text */
     --navbar-bg: #ffffff;
-    --navbar-text: #333;
-    --sidebar-bg: #192A4C;
-    --sidebar-text: #adb5bd;
+    --navbar-text: #252525;  /* Dark gray navbar text */
+    --sidebar-bg: #252525;  /* Dark gray sidebar */
+    --sidebar-text: #f0f0f0;  /* Light gray sidebar text */
     --card-bg: #ffffff;
     --card-border: #e9ecef;
-    --button-bg: #007bff;
-    --button-hover: #0056b3;
+    --button-bg: #cb2121;  /* Red buttons */
+    --button-hover: #a51a1a;  /* Darker red hover */
     --input-bg: #ffffff;
     --input-border: #ced4da;
-    --table-header-bg: #f8f9fa;
+    --table-header-bg: #f0f0f0;  /* Light gray table headers */
     --table-border: #dee2e6;
     --error-bg: #f8d7da;
     --error-text: #721c24;
@@ -25,24 +25,24 @@
 
   [data-theme="dark"] {
     /* Dark theme */
-    --bg-color: #1a1a1a;
-    --text-color: #e9ecef;
-    --navbar-bg: #2d3748;
-    --navbar-text: #e2e8f0;
-    --sidebar-bg: #1a202c;
-    --sidebar-text: #a0aec0;
-    --card-bg: #2d3748;
-    --card-border: #4a5568;
-    --button-bg: #3182ce;
-    --button-hover: #2c5282;
-    --input-bg: #2d3748;
-    --input-border: #4a5568;
-    --table-header-bg: #4a5568;
-    --table-border: #4a5568;
-    --error-bg: #742a2a;
-    --error-text: #fc8181;
-    --success-bg: #2f855a;
-    --success-text: #68d391;
+    --bg-color: #252525;  /* Dark gray background */
+    --text-color: #f0f0f0;  /* Light gray text */
+    --navbar-bg: #1a1a1a;  /* Darker gray navbar */
+    --navbar-text: #f0f0f0;  /* Light gray navbar text */
+    --sidebar-bg: #1a1a1a;  /* Dark gray sidebar */
+    --sidebar-text: #f0f0f0;  /* Light gray sidebar text */
+    --card-bg: #2d2d2d;  /* Slightly lighter dark gray for cards */
+    --card-border: #404040;  /* Medium gray borders */
+    --button-bg: #cb2121;  /* Same red buttons */
+    --button-hover: #a51a1a;  /* Same darker red hover */
+    --input-bg: #2d2d2d;  /* Dark card background for inputs */
+    --input-border: #404040;  /* Medium gray borders */
+    --table-header-bg: #404040;  /* Medium gray table headers */
+    --table-border: #404040;  /* Medium gray borders */
+    --error-bg: #5a1a1a;  /* Dark red error background */
+    --error-text: #ff9999;  /* Light red error text */
+    --success-bg: #1a331a;  /* Dark green success background */
+    --success-text: #99ff99;  /* Light green success text */
   }
 
 body {
@@ -256,7 +256,7 @@ input[type="number"]:focus,
 select:focus {
     border-color: var(--button-bg);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+    box-shadow: 0 0 0 3px rgba(203, 33, 33, 0.2);
 }
 
 /* --- BUTTONS --- */
@@ -332,7 +332,7 @@ th a {
     display: block;
 }
 th a:hover {
-    color: #007bff;
+    color: #cb2121;
 }
 
 /* --- STATS BOXES --- */
@@ -360,7 +360,7 @@ th a:hover {
 .stat-box p {
     font-size: 2rem;
     font-weight: 700;
-    color: #007bff;
+    color: #cb2121;
     margin: 0;
 }
 
@@ -420,7 +420,7 @@ th a:hover {
 #login-form input:focus,
 #register-form input:focus {
     border-color: var(--button-bg);
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+    box-shadow: 0 0 0 3px rgba(203, 33, 33, 0.2);
 }
 
 #login-form button,
@@ -488,8 +488,8 @@ th a:hover {
   font-size: 2.5rem;
   padding: 12px;
   border-radius: 10px;
-  background-color: #f8f9fa;
-  color: #007bff;
+  background-color: #f0f0f0;
+  color: #cb2121;
   line-height: 1;
 }
 
@@ -653,7 +653,7 @@ textarea {
 textarea:focus {
     border-color: var(--button-bg);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+    box-shadow: 0 0 0 3px rgba(203, 33, 33, 0.2);
 }
 
 /* --- Stock Badges --- */
