@@ -273,173 +273,197 @@ if ($action === 'browse') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <title>MALL OF CAP - Online Store</title>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-left">
-            <a href="shop.php" class="company-name">MALL OF CAP</a>
-        </div>
-        <div class="navbar-right">
-            <a href="shop.php?action=cart" class="cart-link">
-                🛒 Cart
-                <?php if ($cart_count > 0): ?>
-                    <span class="cart-count">(<?= $cart_count ?>)</span>
-                <?php endif; ?>
-            </a>
-            <a href="account.php" class="user-link">👤 Account</a>
-            <button class="icon-button theme-toggle" title="Toggle Theme">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193-9.193a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
-                </svg>
-            </button>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a href="shop.php" class="navbar-brand">MALL OF CAP</a>
+            <div class="d-flex align-items-center">
+                <a href="shop.php?action=cart" class="btn btn-outline-primary me-3 position-relative">
+                    🛒 Cart
+                    <?php if ($cart_count > 0): ?>
+                        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle"><?= $cart_count ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="account.php" class="btn btn-outline-secondary me-3">👤 Account</a>
+                <button class="btn btn-outline-secondary" title="Toggle Theme">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193-9.193a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <div class="shop-layout">
-        <!-- Sidebar with Search and Filters -->
-        <aside class="shop-sidebar">
-            <div class="sidebar-content">
-                <h3>🔍 Search & Filter</h3>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4">
+                <div class="bg-light p-3 rounded shadow-sm mb-4">
+                    <h4 class="mb-4">🔍 Search & Filter</h4>
 
-                <!-- Search Form -->
-                <div class="sidebar-section">
-                    <form method="get" action="shop.php" class="sidebar-search">
-                        <input type="hidden" name="action" value="browse">
-                        <label for="sidebar-search" class="sidebar-search-label">Search by Name</label>
-                        <input type="text" name="search" id="sidebar-search" placeholder="Search products..." value="<?= htmlspecialchars($search ?? '') ?>" class="sidebar-search-input">
-                        <button type="submit" class="sidebar-search-btn">🔍</button>
-                    </form>
-                </div>
-
-                <!-- Filters -->
-                <div class="sidebar-section">
-                    <h4>Filters</h4>
-                    <form method="get" action="shop.php" class="sidebar-filters">
-                        <input type="hidden" name="action" value="browse">
-                        <input type="hidden" name="search" value="<?= htmlspecialchars($search ?? '') ?>">
-
-                        <div class="filter-group">
-                            <label for="sidebar-category">Category</label>
-                            <select name="category" id="sidebar-category">
-                                <option value="">All Categories</option>
-                                <?php foreach ($categories as $cat): ?>
-                                    <option value="<?= $cat['id'] ?>" <?= ($category_filter == $cat['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($cat['name']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="sidebar-min-price">Min Price</label>
-                            <input type="number" name="min_price" id="sidebar-min-price" placeholder="0.00" step="0.01" value="<?= htmlspecialchars($min_price ?? '') ?>">
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="sidebar-max-price">Max Price</label>
-                            <input type="number" name="max_price" id="sidebar-max-price" placeholder="999.99" step="0.01" value="<?= htmlspecialchars($max_price ?? '') ?>">
-                        </div>
-
-                        <div class="filter-actions">
-                            <button type="submit" class="filter-apply-btn">Apply Filters</button>
-                            <a href="shop.php?action=browse" class="filter-clear-btn">Clear All</a>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Quick Links -->
-                <div class="sidebar-section">
-                    <h4>Quick Links</h4>
-                    <ul class="sidebar-links">
-                        <li><a href="shop.php?action=browse">🏠 All Products</a></li>
-                        <li><a href="shop.php?action=cart">🛒 My Cart (<?= $cart_count ?>)</a></li>
-                        <li><a href="account.php">👤 My Account</a></li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content Area -->
-        <main class="shop-main">
-            <div class="container">
-                <?php if ($action === 'browse'): ?>
-                    <!-- Product Browse Page -->
-                    <div class="store-header">
-                        <h1>Welcome to MALL OF CAP</h1>
-                        <p>Discover amazing products from our trusted sellers</p>
-                        <?php if (!empty($search) || !empty($category_filter) || !empty($min_price) || !empty($max_price)): ?>
-                            <div class="active-filters">
-                                <span>Active filters:</span>
-                                <?php if (!empty($search)): ?><span class="filter-tag">Search: "<?= htmlspecialchars($search) ?>"</span><?php endif; ?>
-                                <?php if (!empty($category_filter)): ?><span class="filter-tag">Category: <?= htmlspecialchars($categories[array_search($category_filter, array_column($categories, 'id'))]['name'] ?? '') ?></span><?php endif; ?>
-                                <?php if (!empty($min_price)): ?><span class="filter-tag">Min: $<?= htmlspecialchars($min_price) ?></span><?php endif; ?>
-                                <?php if (!empty($max_price)): ?><span class="filter-tag">Max: $<?= htmlspecialchars($max_price) ?></span><?php endif; ?>
+                    <!-- Search Form -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Search Products</h5>
+                        <form method="get" action="shop.php">
+                            <input type="hidden" name="action" value="browse">
+                            <div class="mb-3">
+                                <input type="text" name="search" class="form-control" placeholder="Search products..." value="<?= htmlspecialchars($search ?? '') ?>" autocomplete="off">
                             </div>
-                        <?php endif; ?>
+                            <button type="submit" class="btn btn-primary w-100">🔍 Search</button>
+                        </form>
                     </div>
 
-                    <!-- Products Header -->
-                    <?php if (!empty($products)): ?>
-                        <div class="products-header">
-                            <p>Showing <?= count($products) ?> product<?= count($products) !== 1 ? 's' : '' ?></p>
-                        </div>
-                    <?php endif; ?>
+                    <!-- Filters -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Filters</h5>
+                        <form method="get" action="shop.php">
+                            <input type="hidden" name="action" value="browse">
+                            <input type="hidden" name="search" value="<?= htmlspecialchars($search ?? '') ?>">
 
-                    <!-- Products Grid -->
-                    <div class="products-grid">
-                        <?php if (empty($products)): ?>
-                            <div class="no-products">
-                                <h3>No products found</h3>
-                                <p>Try adjusting your search or filters</p>
-                                <a href="shop.php?action=browse" class="clear-search-link">Clear all filters</a>
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category" class="form-select">
+                                    <option value="">All Categories</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?= $cat['id'] ?>" <?= ($category_filter == $cat['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($cat['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
-                        <?php else: ?>
-                            <?php foreach ($products as $product): ?>
-                                <div class="product-card">
-                                    <div class="product-image">
-                                        <div class="placeholder-image">
-                                            📦<br>Product Image
-                                        </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Price Range</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" name="min_price" class="form-control" placeholder="Min" step="0.01" value="<?= htmlspecialchars($min_price ?? '') ?>">
                                     </div>
-                                    <div class="product-info">
-                                        <h3 class="product-title"><?= htmlspecialchars($product['name']) ?></h3>
-                                        <div class="product-price-above">
-                                            <span class="price">$<?= number_format($product['price'], 2) ?></span>
-                                        </div>
-                                        <div class="product-seller">
-                                            <span class="seller-name">👤 Sold by: <?= htmlspecialchars($product['seller_name'] ?? 'Unknown') ?></span>
-                                        </div>
-                                        <p class="product-description">
-                                            <?= htmlspecialchars(substr($product['description'] ?? '', 0, 100)) ?>
-                                            <?php if (strlen($product['description'] ?? '') > 100): ?>...<?php endif; ?>
-                                        </p>
-                                        <div class="product-meta">
-                                            <span class="category">📁 <?= htmlspecialchars($product['category_name'] ?? 'Uncategorized') ?></span>
-                                            <span class="stock">📦 Stock: <?= htmlspecialchars($product['stock_quantity'] ?? 0) ?></span>
-                                        </div>
-                                        <?php if (!empty($product['tags'])): ?>
-                                            <div class="product-tags">
-                                                <?php foreach (explode(',', $product['tags']) as $tag): ?>
-                                                    <span class="tag-badge-small"><?= htmlspecialchars(trim($tag)) ?></span>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div class="product-price">
-                                            <form method="post" action="shop.php?action=add_to_cart" class="add-to-cart-form">
-                                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                                                <input type="number" name="quantity" value="1" min="1" max="<?= $product['stock_quantity'] ?? 0 ?>" class="quantity-input">
-                                                <button type="submit" class="add-to-cart-btn" <?= ($product['stock_quantity'] ?? 0) <= 0 ? 'disabled' : '' ?>>
-                                                    <?= ($product['stock_quantity'] ?? 0) <= 0 ? 'Out of Stock' : 'Add to Cart' ?>
-                                                </button>
-                                            </form>
-                                        </div>
+                                    <div class="col-6">
+                                        <input type="number" name="max_price" class="form-control" placeholder="Max" step="0.01" value="<?= htmlspecialchars($max_price ?? '') ?>">
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success">Apply Filters</button>
+                                <a href="shop.php?action=browse" class="btn btn-outline-secondary">Clear All</a>
+                            </div>
+                        </form>
                     </div>
+
+                    <!-- Quick Links -->
+                    <div>
+                        <h5 class="mb-3">Quick Links</h5>
+                        <div class="list-group list-group-flush">
+                            <a href="shop.php?action=browse" class="list-group-item list-group-item-action">🏠 All Products</a>
+                            <a href="shop.php?action=cart" class="list-group-item list-group-item-action">🛒 My Cart (<?= $cart_count ?>)</a>
+                            <a href="account.php" class="list-group-item list-group-item-action">👤 My Account</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <div class="container-fluid">
+                    <?php if ($action === 'browse'): ?>
+                        <!-- Product Browse Page -->
+                        <div class="text-center mb-5">
+                            <h1 class="display-4 mb-3">Welcome to MALL OF CAP</h1>
+                            <p class="lead text-muted">Discover amazing products from our trusted sellers</p>
+                            <?php if (!empty($search) || !empty($category_filter) || !empty($min_price) || !empty($max_price)): ?>
+                                <div class="alert alert-info">
+                                    <strong>Active filters:</strong>
+                                    <?php if (!empty($search)): ?><span class="badge bg-primary me-2">Search: "<?= htmlspecialchars($search) ?>"</span><?php endif; ?>
+                                    <?php if (!empty($category_filter)): ?><span class="badge bg-secondary me-2">Category: <?= htmlspecialchars($categories[array_search($category_filter, array_column($categories, 'id'))]['name'] ?? '') ?></span><?php endif; ?>
+                                    <?php if (!empty($min_price)): ?><span class="badge bg-success me-2">Min: $<?= htmlspecialchars($min_price) ?></span><?php endif; ?>
+                                    <?php if (!empty($max_price)): ?><span class="badge bg-success me-2">Max: $<?= htmlspecialchars($max_price) ?></span><?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Products Header -->
+                        <?php if (!empty($products)): ?>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <p class="mb-0 text-muted">Showing <?= count($products) ?> product<?= count($products) !== 1 ? 's' : '' ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Products Grid -->
+                        <div class="row g-4">
+                            <?php if (empty($products)): ?>
+                                <div class="col-12">
+                                    <div class="text-center py-5">
+                                        <div class="mb-4">
+                                            <h3 class="text-muted">No products found</h3>
+                                            <p class="text-muted">Try adjusting your search or filters</p>
+                                        </div>
+                                        <a href="shop.php?action=browse" class="btn btn-primary">Clear all filters</a>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($products as $product): ?>
+                                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                                        <div class="card h-100 shadow-sm">
+                                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                <div class="text-center text-muted">
+                                                    📦<br><small>Product Image</small>
+                                                </div>
+                                            </div>
+                                            <div class="card-body d-flex flex-column">
+                                                <h5 class="card-title mb-2">
+                                                    <a href="product.php?id=<?= $product['id'] ?>" class="text-decoration-none text-dark">
+                                                        <?= htmlspecialchars($product['name']) ?>
+                                                    </a>
+                                                </h5>
+                                                <div class="mb-2">
+                                                    <span class="badge bg-primary">$<?= number_format($product['price'], 2) ?></span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <small class="text-muted">👤 Sold by: <?= htmlspecialchars($product['seller_name'] ?? 'Unknown') ?></small>
+                                                </div>
+                                                <p class="card-text text-muted small mb-3">
+                                                    <?= htmlspecialchars(substr($product['description'] ?? '', 0, 80)) ?>
+                                                    <?php if (strlen($product['description'] ?? '') > 80): ?>...<?php endif; ?>
+                                                </p>
+                                                <div class="mt-auto">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <small class="text-muted">📁 <?= htmlspecialchars($product['category_name'] ?? 'Uncategorized') ?></small>
+                                                        <small class="text-muted">📦 Stock: <?= htmlspecialchars($product['stock_quantity'] ?? 0) ?></small>
+                                                    </div>
+                                                    <?php if (!empty($product['tags'])): ?>
+                                                        <div class="mb-3">
+                                                            <?php foreach (explode(',', $product['tags']) as $tag): ?>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><?= htmlspecialchars(trim($tag)) ?></span>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    <div class="d-flex gap-2">
+                                                        <a href="product.php?id=<?= $product['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+                                                            View Details
+                                                        </a>
+                                                        <?php if ($user_role === 'consumer'): ?>
+                                                            <form method="post" action="shop.php?action=add_to_cart" class="d-flex" style="width: 120px;">
+                                                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                                                                <input type="number" name="quantity" value="1" min="1" max="<?= $product['stock_quantity'] ?? 0 ?>" class="form-control form-control-sm" style="width: 60px;">
+                                                                <button type="submit" class="btn btn-primary btn-sm ms-1" <?= ($product['stock_quantity'] ?? 0) <= 0 ? 'disabled' : '' ?>>
+                                                                    <i class="fas fa-cart-plus"></i>
+                                                                </button>
+                                                            </form>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
 
                 <?php elseif ($action === 'cart'): ?>
                     <!-- Shopping Cart Page -->
@@ -608,14 +632,15 @@ if ($action === 'browse') {
                     <?php endif; ?>
 
                 <?php endif; ?>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <script>
         // Theme toggle functionality
         document.addEventListener('DOMContentLoaded', () => {
-            const themeToggle = document.querySelector('.theme-toggle');
+            const themeToggle = document.querySelector('.btn-outline-secondary');
             const currentTheme = localStorage.getItem('theme') || 'light';
 
             if (currentTheme === 'dark') {
@@ -631,5 +656,8 @@ if ($action === 'browse') {
             });
         });
     </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
