@@ -1,9 +1,16 @@
 {
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "echo 'PHP app ready'"
   },
   "deploy": {
-    "startCommand": "php -S 0.0.0.0:$PORT index.php"
-  },
-  "phpVersion": "8.1"
+    "runtime": "V2",
+    "startCommand": "php -S 0.0.0.0:$PORT -t .",
+    "healthcheckPath": "/health.php",
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
 }
