@@ -372,7 +372,67 @@ if ($action === '') {
   $best_selling_stmt->execute(['uid' => $user_id]);
   $best_selling_products = $best_selling_stmt->fetchAll();
   
-  // 6. NEW: Recently Added Products
+  // 6. SALES ANALYTICS
+  // Total Revenue (from seller's products)
+  $revenue_stmt = $pdo->prepare("
+      SELECT COALESCE(SUM(oi.total_price), 0) as total_revenue
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      JOIN products p ON oi.product_id = p.id
+      WHERE p.seller_id = :uid AND o.status != 'cancelled'
+  ");
+  $revenue_stmt->execute(['uid' => $user_id]);
+  $total_revenue = $revenue_stmt->fetchColumn();
+
+  // Orders This Month (from seller's products)
+  $orders_this_month_stmt = $pdo->prepare("
+      SELECT COUNT(DISTINCT o.id) as orders_this_month
+      FROM orders o
+      JOIN order_items oi ON o.id = oi.order_id
+      JOIN products p ON oi.product_id = p.id
+      WHERE p.seller_id = :uid 
+      AND o.status != 'cancelled'
+      AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+      AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+  ");
+  $orders_this_month_stmt->execute(['uid' => $user_id]);
+  $orders_this_month = $orders_this_month_stmt->fetchColumn();
+
+  // Average Order Value (AOV)
+  $aov_stmt = $pdo->prepare("
+      SELECT AVG(order_total) as avg_order_value
+      FROM (
+          SELECT o.id, SUM(oi.total_price) as order_total
+          FROM orders o
+          JOIN order_items oi ON o.id = oi.order_id
+          JOIN products p ON oi.product_id = p.id
+          WHERE p.seller_id = :uid AND o.status != 'cancelled'
+          GROUP BY o.id
+      ) as order_totals
+  ");
+  $aov_stmt->execute(['uid' => $user_id]);
+  $avg_order_value = $aov_stmt->fetchColumn();
+
+  // Conversion Rate (orders / total customers who viewed products)
+  // For now, we'll use a simplified version: orders / unique customers
+  $conversion_stmt = $pdo->prepare("
+      SELECT 
+          COUNT(DISTINCT CASE WHEN o.id IS NOT NULL THEN o.user_id END) as customers_with_orders,
+          COUNT(DISTINCT o.user_id) as total_customers
+      FROM orders o
+      WHERE EXISTS (
+          SELECT 1 FROM order_items oi 
+          JOIN products p ON oi.product_id = p.id 
+          WHERE oi.order_id = o.id AND p.seller_id = :uid
+      )
+  ");
+  $conversion_stmt->execute(['uid' => $user_id]);
+  $conversion_data = $conversion_stmt->fetch();
+  $customers_with_orders = $conversion_data['customers_with_orders'] ?? 0;
+  $total_customers = max($conversion_data['total_customers'] ?? 1, 1); // Avoid division by zero
+  $conversion_rate = $total_customers > 0 ? ($customers_with_orders / $total_customers) * 100 : 0;
+
+  // 7. NEW: Recently Added Products
   $recent_stmt = $pdo->prepare("
       SELECT p.id, p.name, p.price, c.name as category_name
       FROM products p
@@ -394,6 +454,8 @@ if ($action === '') {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <title>Dashboard</title>
@@ -810,8 +872,64 @@ if ($action === '') {
     });
   </script> <?php else: // $action === '' (The new Home Dashboard) ?>
   <h1>Welcome, <?= htmlspecialchars($_SESSION['username']) ?>!</h1>
-  <p>Here is a summary of your account.</p>
+  <p>Here is a comprehensive overview of your business performance.</p>
   
+  <!-- Sales Analytics Cards -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-lg-6 col-md-6">
+      <div class="card border-primary h-100">
+        <div class="card-body text-center">
+          <div class="mb-2">
+            <i class="fas fa-dollar-sign fa-2x text-primary"></i>
+          </div>
+          <h5 class="card-title">Total Revenue</h5>
+          <h2 class="text-primary mb-0">$<?= number_format($total_revenue, 2) ?></h2>
+          <small class="text-muted">All time earnings</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6">
+      <div class="card border-success h-100">
+        <div class="card-body text-center">
+          <div class="mb-2">
+            <i class="fas fa-shopping-cart fa-2x text-success"></i>
+          </div>
+          <h5 class="card-title">Orders This Month</h5>
+          <h2 class="text-success mb-0"><?= $orders_this_month ?></h2>
+          <small class="text-muted">Current month</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6">
+      <div class="card border-info h-100">
+        <div class="card-body text-center">
+          <div class="mb-2">
+            <i class="fas fa-calculator fa-2x text-info"></i>
+          </div>
+          <h5 class="card-title">Average Order Value</h5>
+          <h2 class="text-info mb-0">$<?= number_format($avg_order_value ?? 0, 2) ?></h2>
+          <small class="text-muted">Per order average</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 col-md-6">
+      <div class="card border-warning h-100">
+        <div class="card-body text-center">
+          <div class="mb-2">
+            <i class="fas fa-chart-line fa-2x text-warning"></i>
+          </div>
+          <h5 class="card-title">Conversion Rate</h5>
+          <h2 class="text-warning mb-0"><?= number_format($conversion_rate, 1) ?>%</h2>
+          <small class="text-muted">Customer conversion</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Stats Cards -->
   <div class="stat-container">
       <div class="stat-box">
           <div class="stat-icon">📦</div>
