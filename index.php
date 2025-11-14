@@ -6,18 +6,18 @@ $register_error = '';
 $login_error = '';
 
 // Handle registration
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'register') {
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
-    $confirm = $_POST['confirm_password'];
+    $role = $_POST['role'] ?? 'consumer';
 
-    if (empty($username) || empty($email) || empty($password) || empty($confirm)) {
+    if (empty($username) || empty($email) || empty($password)) {
         $register_error = "All fields are required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $register_error = "Invalid email.";
-    } elseif ($password !== $confirm) {
-        $register_error = "Passwords do not match.";
+    } elseif (!in_array($role, ['consumer', 'seller'])) {
+        $register_error = "Invalid account type.";
     } else {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE username = :username OR email = :email");
         $stmt->execute(['username' => $username, 'email' => $email]);
@@ -26,10 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             $register_error = "Username or email already exists.";
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
-            $stmt->execute(['username' => $username, 'email' => $email, 'password' => $hash]);
-            // Optionally redirect to login or auto-login
-            header("Location: index.php?login=1");
+            $stmt = $pdo->prepare("INSERT INTO users (username, email, password, role) VALUES (:username, :email, :password, :role)");
+            $stmt->execute(['username' => $username, 'email' => $email, 'password' => $hash, 'role' => $role]);
+            // Auto-login after registration
+            $user_id = $pdo->lastInsertId();
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['username'] = $username;
+            $_SESSION['role'] = $role;
+
+            // Redirect based on role
+            if ($role === 'seller') {
+                header("Location: dashboard.php");
+            } else {
+                header("Location: shop.php");
+            }
             exit;
         }
     }
@@ -47,7 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     if ($account && password_verify($pass, $account['password'])) {
         $_SESSION['user_id'] = $account['id'];
         $_SESSION['username'] = $account['username'];
-        header("Location: dashboard.php");
+        $_SESSION['role'] = $account['role'];
+
+        // Redirect based on role
+        if ($account['role'] === 'seller' || $account['role'] === 'admin') {
+            header("Location: dashboard.php");
+        } else {
+            header("Location: shop.php");
+        }
         exit;
     } else {
         $login_error = "Invalid credentials.";
@@ -120,16 +137,30 @@ if (!$show_register) {
 <div id="register-form" class="<?= $show_register ? '' : 'hidden' ?>">
   <h2>Register</h2>
   <?php if ($register_error): ?><div class="error"><?= htmlspecialchars($register_error) ?></div><?php endif; ?>
-  <form method="post" action="">
-    <input type="text" name="username" placeholder="Username" required>
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-    <button type="submit" name="register">Register</button>
+  <form method="post" action="index.php">
+    <input type="hidden" name="action" value="register">
+    <div class="form-group">
+      <label for="reg_username">Username</label>
+      <input type="text" id="reg_username" name="username" required>
+    </div>
+    <div class="form-group">
+      <label for="reg_email">Email</label>
+      <input type="email" id="reg_email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="reg_password">Password</label>
+      <input type="password" id="reg_password" name="password" required>
+    </div>
+    <div class="form-group">
+      <label for="role">Account Type</label>
+      <select name="role" id="role" required>
+        <option value="consumer">Consumer (Shop for products)</option>
+        <option value="seller">Seller (Manage inventory)</option>
+      </select>
+    </div>
+    <button type="submit">Register</button>
   </form>
-  <div class="toggle-link">
-    Already have an account? <a onclick="toggleForms()">Login here</a>
-  </div>
+  <p>Already have an account? <a href="#" onclick="toggleForms()">Login here</a></p>
 </div>
 </section>
 

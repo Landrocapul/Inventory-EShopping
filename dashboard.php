@@ -2,13 +2,16 @@
 session_start();
 require 'db.php';
 
-if (!isset($_SESSION['user_id'])) {
+// Check if user is logged in and is a seller/admin
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['seller', 'admin'])) {
     header("Location: index.php");
     exit;
 }
 
 $user_id = $_SESSION['user_id'];
-$action = $_GET['action'] ?? '';
+$user_role = $_SESSION['role'];
+$action = $_GET['action'] ?? ''; // Define $action from URL parameter
+
 $error = '';
 $categories = []; // Initialize
 
@@ -21,7 +24,7 @@ if ($action === 'create' || $action === 'edit' || $action === 'products') {
 
 // Handle product deletion
 if ($action === 'delete' && isset($_GET['id'])) {
-    $stmt = $pdo->prepare("DELETE FROM products WHERE id = :id AND created_by = :uid");
+    $stmt = $pdo->prepare("DELETE FROM products WHERE id = :id AND seller_id = :uid");
     $stmt->execute(['id' => $_GET['id'], 'uid' => $user_id]);
     header("Location: dashboard.php?action=products"); // Redirect back to product list
     exit;
@@ -34,6 +37,7 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = $_POST['price'] ?? '';
     $category_id = $_POST['category_id'] ?? '';
     $status = $_POST['status'] ?? 'active';
+    $stock_quantity = (int)($_POST['stock_quantity'] ?? 0);
     $tags = $_POST['tags'] ?? '';
 
     if ($name === '' || !is_numeric($price) || empty($category_id)) {
@@ -42,13 +46,14 @@ if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
         try {
             // Insert product
-            $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category_id, status, created_by) VALUES (:name, :desc, :price, :cid, :status, :uid)");
+            $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category_id, status, stock_quantity, seller_id) VALUES (:name, :desc, :price, :cid, :status, :stock, :uid)");
             $stmt->execute([
                 'name' => $name, 
                 'desc' => $description, 
                 'price' => $price, 
                 'cid' => $category_id, 
                 'status' => $status, 
+                'stock' => $stock_quantity,
                 'uid' => $user_id
             ]);
             $product_id = $pdo->lastInsertId();
@@ -90,7 +95,7 @@ if ($action === 'edit' && isset($_GET['id'])) {
         FROM products p
         LEFT JOIN product_tags pt ON p.id = pt.product_id
         LEFT JOIN tags t ON pt.tag_id = t.id
-        WHERE p.id = :id AND p.created_by = :uid
+        WHERE p.id = :id AND p.seller_id = :uid
         GROUP BY p.id
     ");
     $stmt->execute(['id' => $id, 'uid' => $user_id]);
@@ -106,6 +111,7 @@ if ($action === 'edit' && isset($_GET['id'])) {
         $price = $_POST['price'] ?? '';
         $category_id = $_POST['category_id'] ?? '';
         $status = $_POST['status'] ?? 'active';
+        $stock_quantity = (int)($_POST['stock_quantity'] ?? 0);
         $tags = $_POST['tags'] ?? '';
 
         if ($name === '' || !is_numeric($price) || empty($category_id)) {
@@ -114,13 +120,14 @@ if ($action === 'edit' && isset($_GET['id'])) {
             $pdo->beginTransaction();
             try {
                 // Update product
-                $stmt = $pdo->prepare("UPDATE products SET name = :name, description = :desc, price = :price, category_id = :cid, status = :status WHERE id = :id AND created_by = :uid");
+                $stmt = $pdo->prepare("UPDATE products SET name = :name, description = :desc, price = :price, category_id = :cid, status = :status, stock_quantity = :stock WHERE id = :id AND seller_id = :uid");
                 $stmt->execute([
                     'name' => $name, 
                     'desc' => $description, 
                     'price' => $price, 
                     'cid' => $category_id, 
                     'status' => $status, 
+                    'stock' => $stock_quantity,
                     'id' => $id, 
                     'uid' => $user_id
                 ]);
@@ -166,7 +173,7 @@ if ($action === 'products') {
         if (!empty($selected_ids)) {
             if ($action_type === 'delete') {
                 $placeholders = str_repeat('?,', count($selected_ids) - 1) . '?';
-                $stmt = $pdo->prepare("DELETE FROM products WHERE id IN ($placeholders) AND created_by = ?");
+                $stmt = $pdo->prepare("DELETE FROM products WHERE id IN ($placeholders) AND seller_id = ?");
                 $stmt->execute(array_merge($selected_ids, [$user_id]));
                 header("Location: dashboard.php?action=products");
                 exit;
@@ -194,6 +201,7 @@ if ($action === 'products') {
         'name' => 'p.name',
         'category' => 'c.name',
         'price' => 'p.price',
+        'stock_quantity' => 'p.stock_quantity',
         'status' => 'p.status',
         'created_at' => 'p.created_at'
     ];
@@ -214,7 +222,7 @@ if ($action === 'products') {
     $next_order = ($order === 'ASC') ? 'desc' : 'asc';
     
     // 8. Build WHERE conditions
-    $where_conditions = ['p.created_by = :uid'];
+    $where_conditions = ['p.seller_id = :uid'];
     $params = ['uid' => $user_id];
     
     if (!empty($search)) {
@@ -290,7 +298,7 @@ if ($action === 'products') {
 // Fetch data for Home Dashboard (default action)
 if ($action === '') {
   // 1. Total products
-  $stmt_count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE created_by = :uid");
+  $stmt_count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE seller_id = :uid");
   $stmt_count->execute(['uid' => $user_id]);
   $total_products = $stmt_count->fetchColumn();
 
@@ -300,7 +308,7 @@ if ($action === '') {
   $total_categories = $stmt_cat->fetchColumn();
   
   // 3. Total inventory value
-  $stmt_val = $pdo->prepare("SELECT SUM(price) FROM products WHERE created_by = :uid");
+  $stmt_val = $pdo->prepare("SELECT SUM(price) FROM products WHERE seller_id = :uid");
   $stmt_val->execute(['uid' => $user_id]);
   $total_value = $stmt_val->fetchColumn();
 
@@ -309,7 +317,7 @@ if ($action === '') {
       SELECT c.name, COUNT(p.id) as product_count
       FROM categories c
       LEFT JOIN products p ON c.id = p.category_id
-      WHERE p.created_by = :uid
+      WHERE p.seller_id = :uid
       GROUP BY c.id, c.name
       HAVING product_count > 0
       ORDER BY product_count DESC
@@ -326,7 +334,7 @@ if ($action === '') {
       SELECT p.id, p.name, p.price, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.created_by = :uid
+      WHERE p.seller_id = :uid
       ORDER BY p.created_at DESC
       LIMIT 5
   ");
@@ -428,6 +436,10 @@ if ($action === '') {
           <input type="number" id="price" step="0.01" name="price" placeholder="e.g. 29.99" required />
         </div>
         <div class="form-group">
+          <label for="stock_quantity">Stock Quantity</label>
+          <input type="number" id="stock_quantity" name="stock_quantity" min="0" value="0" placeholder="e.g. 100" />
+        </div>
+        <div class="form-group">
           <label for="category_id">Category</label>
           <select name="category_id" id="category_id" required>
             <option value="">-- Select a Category --</option>
@@ -472,6 +484,10 @@ if ($action === '') {
       <div class="form-group">
         <label for="price">Price</label>
         <input type="number" id="price" step="0.01" name="price" value="<?= htmlspecialchars($product['price']) ?>" required />
+      </div>
+      <div class="form-group">
+        <label for="stock_quantity">Stock Quantity</label>
+        <input type="number" id="stock_quantity" name="stock_quantity" min="0" value="<?= htmlspecialchars($product['stock_quantity'] ?? 0) ?>" />
       </div>
       <div class="form-group">
         <label for="category_id">Category</label>
@@ -599,6 +615,7 @@ if ($action === '') {
                 sort_link('name', 'Name', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
                 sort_link('category', 'Category', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
                 sort_link('price', 'Price', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
+                sort_link('stock_quantity', 'Stock', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
                 sort_link('status', 'Status', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
                 sort_link('created_at', 'Created At', $sort_key, $order, $next_order, $search ?? '', $category_filter ?? '', $min_price ?? '', $max_price ?? '', $status_filter ?? '');
                 ?>
@@ -628,6 +645,11 @@ if ($action === '') {
                 </td>
                 <td><?= htmlspecialchars($p['category_name'] ?? 'N/A') ?></td>
                 <td>$<?= number_format($p['price'], 2) ?></td>
+                <td>
+                  <span class="stock-badge <?= ($p['stock_quantity'] ?? 0) <= 5 ? 'stock-low' : 'stock-good' ?>">
+                    <?= htmlspecialchars($p['stock_quantity'] ?? 0) ?>
+                  </span>
+                </td>
                 <td>
                   <span class="status-badge status-<?= $p['status'] ?? 'active' ?>">
                     <?= ucfirst($p['status'] ?? 'active') ?>

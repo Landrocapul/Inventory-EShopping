@@ -1,0 +1,394 @@
+<?php
+session_start();
+require 'db.php';
+
+// Check if user is logged in as consumer
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'consumer') {
+    header("Location: index.php");
+    exit;
+}
+
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['role'];
+
+$action = $_GET['action'] ?? 'browse';
+
+// Handle add to cart
+if ($action === 'add_to_cart' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $product_id = (int)$_POST['product_id'];
+    $quantity = (int)($_POST['quantity'] ?? 1);
+
+    if ($quantity > 0) {
+        // Check if item already in cart
+        $stmt = $pdo->prepare("SELECT id, quantity FROM cart WHERE user_id = :uid AND product_id = :pid");
+        $stmt->execute(['uid' => $user_id, 'pid' => $product_id]);
+        $existing = $stmt->fetch();
+
+        if ($existing) {
+            // Update quantity
+            $stmt = $pdo->prepare("UPDATE cart SET quantity = quantity + :qty WHERE id = :id");
+            $stmt->execute(['qty' => $quantity, 'id' => $existing['id']]);
+        } else {
+            // Add new item
+            $stmt = $pdo->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (:uid, :pid, :qty)");
+            $stmt->execute(['uid' => $user_id, 'pid' => $product_id, 'qty' => $quantity]);
+        }
+    }
+    header("Location: shop.php?added=1");
+    exit;
+}
+
+// Handle cart operations
+if ($action === 'cart') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['update_cart'])) {
+            foreach ($_POST['quantities'] as $cart_id => $quantity) {
+                $quantity = (int)$quantity;
+                if ($quantity <= 0) {
+                    $stmt = $pdo->prepare("DELETE FROM cart WHERE id = :id AND user_id = :uid");
+                    $stmt->execute(['id' => $cart_id, 'uid' => $user_id]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE cart SET quantity = :qty WHERE id = :id AND user_id = :uid");
+                    $stmt->execute(['qty' => $quantity, 'id' => $cart_id, 'uid' => $user_id]);
+                }
+            }
+        } elseif (isset($_POST['remove_item'])) {
+            $cart_id = (int)$_POST['cart_id'];
+            $stmt = $pdo->prepare("DELETE FROM cart WHERE id = :id AND user_id = :uid");
+            $stmt->execute(['id' => $cart_id, 'uid' => $user_id]);
+        } elseif (isset($_POST['checkout'])) {
+            // Redirect to checkout
+            header("Location: shop.php?action=checkout");
+            exit;
+        }
+    }
+
+    // Get cart items
+    $stmt = $pdo->prepare("
+        SELECT c.*, p.name, p.price, p.stock_quantity, p.status,
+               (c.quantity * p.price) as total
+        FROM cart c
+        JOIN products p ON c.product_id = p.id
+        WHERE c.user_id = :uid AND p.status = 'active'
+        ORDER BY c.added_at DESC
+    ");
+    $stmt->execute(['uid' => $user_id]);
+    $cart_items = $stmt->fetchAll();
+
+    $cart_total = array_sum(array_column($cart_items, 'total'));
+}
+
+// Get cart count for header
+$cart_count_stmt = $pdo->prepare("SELECT SUM(quantity) FROM cart WHERE user_id = :uid");
+$cart_count_stmt->execute(['uid' => $user_id]);
+$cart_count = $cart_count_stmt->fetchColumn() ?? 0;
+
+// Handle product browsing
+if ($action === 'browse') {
+    // Get search and filter parameters
+    $search = trim($_GET['search'] ?? '');
+    $category_filter = $_GET['category'] ?? '';
+    $min_price = is_numeric($_GET['min_price'] ?? '') ? (float)$_GET['min_price'] : '';
+    $max_price = is_numeric($_GET['max_price'] ?? '') ? (float)$_GET['max_price'] : '';
+
+    // Save search history if search query exists
+    if (!empty($search)) {
+        $history_stmt = $pdo->prepare("INSERT INTO search_history (user_id, search_query) VALUES (:uid, :query)");
+        $history_stmt->execute(['uid' => $user_id, 'query' => $search]);
+    }
+
+    // Build WHERE conditions
+    $where_conditions = ["p.status = 'active'"];
+    $params = [];
+
+    if (!empty($search)) {
+        $where_conditions[] = '(p.name LIKE :search OR p.description LIKE :search OR t.name LIKE :search)';
+        $params['search'] = '%' . $search . '%';
+    }
+    if (!empty($category_filter)) {
+        $where_conditions[] = 'p.category_id = :category';
+        $params['category'] = $category_filter;
+    }
+    if ($min_price !== '') {
+        $where_conditions[] = 'p.price >= :min_price';
+        $params['min_price'] = $min_price;
+    }
+    if ($max_price !== '') {
+        $where_conditions[] = 'p.price <= :max_price';
+        $params['max_price'] = $max_price;
+    }
+
+    $where_clause = implode(' AND ', $where_conditions);
+
+    // Get products
+    $stmt = $pdo->prepare("
+        SELECT p.*, c.name AS category_name, GROUP_CONCAT(DISTINCT t.name) as tags
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN product_tags pt ON p.id = pt.product_id
+        LEFT JOIN tags t ON pt.tag_id = t.id
+        WHERE $where_clause
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->execute($params);
+    $products = $stmt->fetchAll();
+
+    // Get categories for filter
+    $cat_stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
+    $categories = $cat_stmt->fetchAll();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <title>MALL OF CAP - Online Store</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="shop.php" class="company-name">MALL OF CAP</a>
+        </div>
+        <div class="navbar-right">
+            <a href="shop.php?action=cart" class="cart-link">
+                🛒 Cart
+                <?php if ($cart_count > 0): ?>
+                    <span class="cart-count">(<?= $cart_count ?>)</span>
+                <?php endif; ?>
+            </a>
+            <a href="account.php" class="user-link">👤 Account</a>
+            <button class="icon-button theme-toggle" title="Toggle Theme">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193-9.193a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="shop-layout">
+        <!-- Sidebar with Search and Filters -->
+        <aside class="shop-sidebar">
+            <div class="sidebar-content">
+                <h3>🔍 Search & Filter</h3>
+
+                <!-- Search Form -->
+                <div class="sidebar-section">
+                    <form method="get" action="shop.php" class="sidebar-search">
+                        <input type="hidden" name="action" value="browse">
+                        <label for="sidebar-search" class="sidebar-search-label">Search by Name</label>
+                        <input type="text" name="search" id="sidebar-search" placeholder="Search products..." value="<?= htmlspecialchars($search ?? '') ?>" class="sidebar-search-input">
+                        <button type="submit" class="sidebar-search-btn">🔍</button>
+                    </form>
+                </div>
+
+                <!-- Filters -->
+                <div class="sidebar-section">
+                    <h4>Filters</h4>
+                    <form method="get" action="shop.php" class="sidebar-filters">
+                        <input type="hidden" name="action" value="browse">
+                        <input type="hidden" name="search" value="<?= htmlspecialchars($search ?? '') ?>">
+
+                        <div class="filter-group">
+                            <label for="sidebar-category">Category</label>
+                            <select name="category" id="sidebar-category">
+                                <option value="">All Categories</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat['id'] ?>" <?= ($category_filter == $cat['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($cat['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="sidebar-min-price">Min Price</label>
+                            <input type="number" name="min_price" id="sidebar-min-price" placeholder="0.00" step="0.01" value="<?= htmlspecialchars($min_price ?? '') ?>">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="sidebar-max-price">Max Price</label>
+                            <input type="number" name="max_price" id="sidebar-max-price" placeholder="999.99" step="0.01" value="<?= htmlspecialchars($max_price ?? '') ?>">
+                        </div>
+
+                        <div class="filter-actions">
+                            <button type="submit" class="filter-apply-btn">Apply Filters</button>
+                            <a href="shop.php?action=browse" class="filter-clear-btn">Clear All</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="sidebar-section">
+                    <h4>Quick Links</h4>
+                    <ul class="sidebar-links">
+                        <li><a href="shop.php?action=browse">🏠 All Products</a></li>
+                        <li><a href="shop.php?action=cart">🛒 My Cart (<?= $cart_count ?>)</a></li>
+                        <li><a href="account.php">👤 My Account</a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="shop-main">
+            <div class="container">
+                <?php if ($action === 'browse'): ?>
+                    <!-- Product Browse Page -->
+                    <div class="store-header">
+                        <h1>Welcome to MALL OF CAP</h1>
+                        <p>Discover amazing products from our trusted sellers</p>
+                        <?php if (!empty($search) || !empty($category_filter) || !empty($min_price) || !empty($max_price)): ?>
+                            <div class="active-filters">
+                                <span>Active filters:</span>
+                                <?php if (!empty($search)): ?><span class="filter-tag">Search: "<?= htmlspecialchars($search) ?>"</span><?php endif; ?>
+                                <?php if (!empty($category_filter)): ?><span class="filter-tag">Category: <?= htmlspecialchars($categories[array_search($category_filter, array_column($categories, 'id'))]['name'] ?? '') ?></span><?php endif; ?>
+                                <?php if (!empty($min_price)): ?><span class="filter-tag">Min: $<?= htmlspecialchars($min_price) ?></span><?php endif; ?>
+                                <?php if (!empty($max_price)): ?><span class="filter-tag">Max: $<?= htmlspecialchars($max_price) ?></span><?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Products Header -->
+                    <?php if (!empty($products)): ?>
+                        <div class="products-header">
+                            <p>Showing <?= count($products) ?> product<?= count($products) !== 1 ? 's' : '' ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Products Grid -->
+                    <div class="products-grid">
+                        <?php if (empty($products)): ?>
+                            <div class="no-products">
+                                <h3>No products found</h3>
+                                <p>Try adjusting your search or filters</p>
+                                <a href="shop.php?action=browse" class="clear-search-link">Clear all filters</a>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($products as $product): ?>
+                                <div class="product-card">
+                                    <div class="product-image">
+                                        <div class="placeholder-image">
+                                            📦<br>Product Image
+                                        </div>
+                                    </div>
+                                    <div class="product-info">
+                                        <h3 class="product-title"><?= htmlspecialchars($product['name']) ?></h3>
+                                        <div class="product-price-above">
+                                            <span class="price">$<?= number_format($product['price'], 2) ?></span>
+                                        </div>
+                                        <p class="product-description">
+                                            <?= htmlspecialchars(substr($product['description'] ?? '', 0, 100)) ?>
+                                            <?php if (strlen($product['description'] ?? '') > 100): ?>...<?php endif; ?>
+                                        </p>
+                                        <div class="product-meta">
+                                            <span class="category">📁 <?= htmlspecialchars($product['category_name'] ?? 'Uncategorized') ?></span>
+                                            <span class="stock">📦 Stock: <?= htmlspecialchars($product['stock_quantity'] ?? 0) ?></span>
+                                        </div>
+                                        <?php if (!empty($product['tags'])): ?>
+                                            <div class="product-tags">
+                                                <?php foreach (explode(',', $product['tags']) as $tag): ?>
+                                                    <span class="tag-badge-small"><?= htmlspecialchars(trim($tag)) ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="product-price">
+                                            <form method="post" action="shop.php?action=add_to_cart" class="add-to-cart-form">
+                                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                                                <input type="number" name="quantity" value="1" min="1" max="<?= $product['stock_quantity'] ?? 0 ?>" class="quantity-input">
+                                                <button type="submit" class="add-to-cart-btn" <?= ($product['stock_quantity'] ?? 0) <= 0 ? 'disabled' : '' ?>>
+                                                    <?= ($product['stock_quantity'] ?? 0) <= 0 ? 'Out of Stock' : 'Add to Cart' ?>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                <?php elseif ($action === 'cart'): ?>
+                    <!-- Shopping Cart Page -->
+                    <h1>Your Shopping Cart</h1>
+
+                    <?php if (isset($_GET['updated'])): ?>
+                        <div class="success-message">Cart updated successfully!</div>
+                    <?php endif; ?>
+
+                    <?php if (empty($cart_items)): ?>
+                        <div class="empty-cart">
+                            <h3>Your cart is empty</h3>
+                            <p><a href="shop.php?action=browse">Continue Shopping</a></p>
+                        </div>
+                    <?php else: ?>
+                        <div class="cart-container">
+                            <form method="post" action="shop.php?action=cart">
+                                <div class="cart-items">
+                                    <?php foreach ($cart_items as $item): ?>
+                                        <div class="cart-item">
+                                            <div class="cart-item-info">
+                                                <h4><?= htmlspecialchars($item['name']) ?></h4>
+                                                <p>$<?= number_format($item['price'], 2) ?> each</p>
+                                            </div>
+                                            <div class="cart-item-controls">
+                                                <input type="number" name="quantities[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>" min="0" max="<?= $item['stock_quantity'] ?>" class="cart-quantity">
+                                                <span class="item-total">$<?= number_format($item['total'], 2) ?></span>
+                                                <button type="submit" name="remove_item" value="1" class="remove-btn" onclick="return confirm('Remove this item?')">
+                                                    <input type="hidden" name="cart_id" value="<?= $item['id'] ?>">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <div class="cart-summary">
+                                    <div class="cart-total">
+                                        <strong>Total: $<?= number_format($cart_total, 2) ?></strong>
+                                    </div>
+                                    <div class="cart-actions">
+                                        <button type="submit" name="update_cart" class="update-cart-btn">Update Cart</button>
+                                        <button type="submit" name="checkout" class="checkout-btn">Proceed to Checkout</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                <?php elseif ($action === 'checkout'): ?>
+                    <!-- Checkout Page -->
+                    <h1>Checkout</h1>
+                    <div class="checkout-notice">
+                        <p>🚧 Checkout functionality coming soon!</p>
+                        <p>This is where customers would enter shipping information and payment details.</p>
+                        <a href="shop.php?action=cart">← Back to Cart</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.querySelector('.theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+
+            if (currentTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                document.body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        });
+    </script>
+</body>
+</html>

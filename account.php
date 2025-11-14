@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['role'] ?? 'consumer';
 $action = $_GET['action'] ?? 'profile';
 $error = '';
 $success = '';
@@ -67,14 +68,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     }
 }
 
-// Get account activity (simplified - just creation date and product counts)
-$product_count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE created_by = ?");
-$product_count->execute([$user_id]);
-$total_products = $product_count->fetchColumn();
+// Fetch user data
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
 
-$category_count = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE created_by = ?");
-$category_count->execute([$user_id]);
-$total_categories = $category_count->fetchColumn();
+// Get account activity based on role
+if ($user_role === 'seller' || $user_role === 'admin') {
+    $product_count = $pdo->prepare("SELECT COUNT(*) FROM products WHERE seller_id = ?");
+    $product_count->execute([$user_id]);
+    $total_products = $product_count->fetchColumn();
+
+    $category_count = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE created_by = ?");
+    $category_count->execute([$user_id]);
+    $total_categories = $category_count->fetchColumn();
+
+    $order_count = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id IN (SELECT id FROM users WHERE role = 'consumer') AND EXISTS (SELECT 1 FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE p.seller_id = ?)");
+    $order_count->execute([$user_id]);
+    $total_orders = $order_count->fetchColumn();
+} else {
+    // Consumer stats
+    $order_count = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ?");
+    $order_count->execute([$user_id]);
+    $total_orders = $order_count->fetchColumn();
+
+    $cart_count = $pdo->prepare("SELECT SUM(quantity) FROM cart WHERE user_id = ?");
+    $cart_count->execute([$user_id]);
+    $total_cart_items = $cart_count->fetchColumn() ?? 0;
+
+    $total_products = 0; // Consumers don't own products
+    $total_categories = 0; // Consumers don't own categories
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -119,18 +143,27 @@ $total_categories = $category_count->fetchColumn();
 
 <aside class="sidebar">
   <ul class="sidebar-menu">
-    <li><a href="dashboard.php">
-        <span class="menu-icon">🏠</span> <span>Home</span>
-    </a></li>
-    <li><a href="dashboard.php?action=products">
-        <span class="menu-icon">📦</span> <span>Products</span>
-    </a></li>
-    <li><a href="categories.php">
-        <span class="menu-icon">🗂️</span> <span>Categories</span>
-    </a></li>
-    <li><a href="#">
-        <span class="menu-icon">🏬</span> <span>Stores</span>
-    </a></li>
+    <?php if ($user_role === 'seller' || $user_role === 'admin'): ?>
+      <li><a href="dashboard.php">
+          <span class="menu-icon">🏠</span> <span>Dashboard</span>
+      </a></li>
+      <li><a href="dashboard.php?action=products">
+          <span class="menu-icon">📦</span> <span>My Products</span>
+      </a></li>
+      <li><a href="categories.php">
+          <span class="menu-icon">🗂️</span> <span>Categories</span>
+      </a></li>
+    <?php else: ?>
+      <li><a href="shop.php">
+          <span class="menu-icon">🛒</span> <span>Shop</span>
+      </a></li>
+      <li><a href="shop.php?action=cart">
+          <span class="menu-icon">🛒</span> <span>My Cart</span>
+      </a></li>
+      <li><a href="shop.php?action=orders">
+          <span class="menu-icon">📋</span> <span>My Orders</span>
+      </a></li>
+    <?php endif; ?>
   </ul>
   <ul class="sidebar-menu logout-menu">
     <li><a href="logout.php"><span class="menu-icon">🚪</span> <span>Logout</span></a></li>
@@ -196,8 +229,17 @@ $total_categories = $category_count->fetchColumn();
     <h2>Account Activity</h2>
     <div class="activity-info">
       <p><strong>Account Created:</strong> <?= (new DateTime($user['created_at']))->format('F j, Y \a\t g:i A') ?></p>
-      <p><strong>Total Products:</strong> <?= $total_products ?></p>
-      <p><strong>Total Categories:</strong> <?= $total_categories ?></p>
+      <p><strong>Account Type:</strong> <?= ucfirst($user_role) ?></p>
+
+      <?php if ($user_role === 'seller' || $user_role === 'admin'): ?>
+        <p><strong>Total Products:</strong> <?= $total_products ?></p>
+        <p><strong>Total Categories:</strong> <?= $total_categories ?></p>
+        <p><strong>Orders Received:</strong> <?= $total_orders ?></p>
+      <?php else: ?>
+        <p><strong>Total Orders:</strong> <?= $total_orders ?></p>
+        <p><strong>Items in Cart:</strong> <?= $total_cart_items ?></p>
+        <p><strong>Member Since:</strong> <?= (new DateTime($user['created_at']))->format('F Y') ?></p>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -241,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 .account-tabs {
   display: flex;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .tab-button {
@@ -252,10 +294,11 @@ document.addEventListener('DOMContentLoaded', () => {
   font-size: 1rem;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s;
+  color: var(--text-color);
 }
 
 .tab-button.active {
-  border-bottom-color: #007bff;
+  border-bottom-color: var(--button-bg);
   font-weight: 600;
 }
 
@@ -264,9 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 .success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid rgba(255,255,255,0.1);
   padding: 12px 15px;
   border-radius: 6px;
   margin-bottom: 15px;
@@ -275,11 +318,30 @@ document.addEventListener('DOMContentLoaded', () => {
 .activity-info p {
   margin-bottom: 10px;
   padding: 8px 0;
-  border-bottom: 1px solid #f1f3f5;
+  border-bottom: 1px solid var(--table-border);
+  color: var(--text-color);
+}
+
+.activity-info strong {
+  color: var(--text-color);
+  font-weight: 600;
 }
 
 .activity-info p:last-child {
   border-bottom: none;
+}
+
+/* Form labels and headings */
+.card h2 {
+  color: var(--text-color);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.card label {
+  color: var(--text-color);
+  opacity: 0.9;
+  font-weight: 500;
 }
 </style>
 
