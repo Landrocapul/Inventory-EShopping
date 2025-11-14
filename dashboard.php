@@ -329,7 +329,50 @@ if ($action === '') {
   $chart_labels = json_encode(array_column($chart_data, 'name'));
   $chart_values = json_encode(array_column($chart_data, 'product_count'));
 
-  // 5. NEW: Recently Added Products
+  // 5. NEW: Inventory Alerts
+  $low_stock_stmt = $pdo->prepare("
+      SELECT p.id, p.name, p.stock_quantity, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.seller_id = :uid AND p.stock_quantity <= 5 AND p.stock_quantity > 0
+      ORDER BY p.stock_quantity ASC
+      LIMIT 10
+  ");
+  $low_stock_stmt->execute(['uid' => $user_id]);
+  $low_stock_products = $low_stock_stmt->fetchAll();
+
+  // Out of stock products
+  $out_of_stock_stmt = $pdo->prepare("
+      SELECT p.id, p.name, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.seller_id = :uid AND p.stock_quantity = 0
+      ORDER BY p.name
+      LIMIT 10
+  ");
+  $out_of_stock_stmt->execute(['uid' => $user_id]);
+  $out_of_stock_products = $out_of_stock_stmt->fetchAll();
+
+  // Best selling products (by total quantity sold)
+  $best_selling_stmt = $pdo->prepare("
+      SELECT p.id, p.name, p.stock_quantity, 
+             COALESCE(SUM(oi.quantity), 0) as total_sold,
+             COALESCE(SUM(oi.total_price), 0) as total_revenue,
+             c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN order_items oi ON p.id = oi.product_id
+      LEFT JOIN orders o ON oi.order_id = o.id AND o.status != 'cancelled'
+      WHERE p.seller_id = :uid
+      GROUP BY p.id, p.name, p.stock_quantity, c.name
+      HAVING total_sold > 0
+      ORDER BY total_sold DESC
+      LIMIT 5
+  ");
+  $best_selling_stmt->execute(['uid' => $user_id]);
+  $best_selling_products = $best_selling_stmt->fetchAll();
+  
+  // 6. NEW: Recently Added Products
   $recent_stmt = $pdo->prepare("
       SELECT p.id, p.name, p.price, c.name as category_name
       FROM products p
@@ -349,6 +392,8 @@ if ($action === '') {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <title>Dashboard</title>
@@ -817,6 +862,115 @@ if ($action === '') {
         <?php endif; ?>
       </div>
 
+      <!-- Inventory Alerts Section -->
+      <div class="card">
+        <h2>📊 Inventory Alerts</h2>
+
+        <!-- Low Stock Warnings -->
+        <?php if (!empty($low_stock_products)): ?>
+          <div class="alert alert-warning mb-3">
+            <h5 class="alert-heading mb-3">⚠️ Low Stock Items (≤5 remaining)</h5>
+            <div class="row">
+              <?php foreach ($low_stock_products as $product): ?>
+                <div class="col-md-6 col-lg-4 mb-2">
+                  <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                    <div class="flex-grow-1">
+                      <strong class="text-truncate d-block" style="max-width: 120px;" title="<?= htmlspecialchars($product['name']) ?>">
+                        <?= htmlspecialchars($product['name']) ?>
+                      </strong>
+                      <small class="text-muted d-block">
+                        <?= htmlspecialchars($product['category_name'] ?? 'N/A') ?>
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-warning text-dark fw-bold">
+                        <?= $product['stock_quantity'] ?>
+                      </span>
+                      <a href="dashboard.php?action=edit&id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary ms-2">
+                        Edit
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- Out of Stock Items -->
+        <?php if (!empty($out_of_stock_products)): ?>
+          <div class="alert alert-danger mb-3">
+            <h5 class="alert-heading mb-3">❌ Out of Stock Items</h5>
+            <div class="row">
+              <?php foreach ($out_of_stock_products as $product): ?>
+                <div class="col-md-6 col-lg-4 mb-2">
+                  <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                    <div class="flex-grow-1">
+                      <strong class="text-truncate d-block" style="max-width: 120px;" title="<?= htmlspecialchars($product['name']) ?>">
+                        <?= htmlspecialchars($product['name']) ?>
+                      </strong>
+                      <small class="text-muted d-block">
+                        <?= htmlspecialchars($product['category_name'] ?? 'N/A') ?>
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-danger fw-bold">0</span>
+                      <a href="dashboard.php?action=edit&id=<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary ms-2">
+                        Edit
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- Best Selling Products -->
+        <?php if (!empty($best_selling_products)): ?>
+          <div class="alert alert-success mb-3">
+            <h5 class="alert-heading mb-3">🏆 Best Selling Products</h5>
+            <div class="row">
+              <?php foreach ($best_selling_products as $product): ?>
+                <div class="col-md-6 mb-3">
+                  <div class="card h-100 border-success">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                          <h6 class="card-title mb-1">
+                            <?= htmlspecialchars($product['name']) ?>
+                          </h6>
+                          <p class="card-text small text-muted mb-2">
+                            <?= htmlspecialchars($product['category_name'] ?? 'N/A') ?>
+                          </p>
+                          <div class="d-flex gap-3 small">
+                            <span><strong>Sold:</strong> <?= $product['total_sold'] ?> units</span>
+                            <span><strong>Revenue:</strong> $<?= number_format($product['total_revenue'], 2) ?></span>
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <span class="badge bg-success mb-2">Top Seller</span>
+                          <br>
+                          <small class="text-muted">Stock: <?= $product['stock_quantity'] ?></small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- No Alerts Message -->
+        <?php if (empty($low_stock_products) && empty($out_of_stock_products) && empty($best_selling_products)): ?>
+          <div class="alert alert-info">
+            <h5 class="alert-heading">✅ All Good!</h5>
+            <p class="mb-0">No inventory alerts at this time. Your stock levels look good!</p>
+          </div>
+        <?php endif; ?>
+      </div>
+
     </div>
     <div class="dashboard-col-side">
       
@@ -887,6 +1041,9 @@ if ($action === '') {
   </script>
   <?php endif; ?>
 
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </main>
 </body>
