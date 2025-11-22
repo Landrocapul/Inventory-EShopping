@@ -1,9 +1,9 @@
 <?php
 // Database configuration - Production ready with environment variables
-$host = getenv('DB_HOST') ?: "localhost";
-$dbname = getenv('DB_NAME') ?: "lazada";
-$username = getenv('DB_USER') ?: "root";
-$password = getenv('DB_PASS') ?: "";
+$host = getenv('DB_HOST') ?: "sql307.infinityfree.com";
+$dbname = getenv('DB_NAME') ?: "if0_40482619_XXX";
+$username = getenv('DB_USER') ?: "if0_40482619";
+$password = getenv('DB_PASS') ?: "4uKF4gkfId";
 
 // For Railway, the database URL might be provided as DATABASE_URL
 $database_url = getenv('DATABASE_URL');
