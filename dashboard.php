@@ -562,11 +562,31 @@ if ($action === '') {
           <label for="tags">Tags (comma-separated)</label>
           <input type="text" id="tags" name="tags" placeholder="e.g. electronics, wireless, gaming" />
         </div>
-        <button type="submit">Create Product</button>
+        <button type="submit" class="button-gradient-primary">Create Product</button>
       </form>
     <?php endif; ?>
   </div>
   <p><a href="dashboard.php?action=products" class="button secondary-button">Back to Products</a></p>
+
+  <script>
+    // Theme toggle functionality for create page
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggle = document.querySelector('.theme-toggle');
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      
+      if (currentTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+      }
+      
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    });
+  </script>
 
 <?php elseif ($action === 'edit' && isset($product)): ?>
   <h1>Edit Product</h1>
@@ -614,15 +634,35 @@ if ($action === '') {
         <label for="tags">Tags (comma-separated)</label>
         <input type="text" id="tags" name="tags" value="<?= htmlspecialchars($product['tags'] ?? '') ?>" placeholder="e.g. electronics, wireless, gaming" />
       </div>
-      <button type="submit">Update Product</button>
+      <button type="submit" class="button-gradient-primary">Update Product</button>
     </form>
   </div>
   <p><a href="dashboard.php?action=products" class="button secondary-button">Back to Products</a></p>
 
+  <script>
+    // Theme toggle functionality for edit page
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggle = document.querySelector('.theme-toggle');
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      
+      if (currentTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+      }
+      
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    });
+  </script>
+
 <?php elseif ($action === 'products'): ?>
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
     <h1>Your Products</h1>
-    <a href="dashboard.php?action=create" class="button">+ Add New Product</a>
+    <a href="dashboard.php?action=create" class="button button-gradient-primary">+ Add New Product</a>
   </div>
   
   <!-- Search and Filter Form -->
@@ -673,7 +713,7 @@ if ($action === '') {
           <input type="number" id="max_price" name="max_price" step="0.01" value="<?= htmlspecialchars($max_price ?? '') ?>" placeholder="999.99" />
         </div>
         <div class="form-group button-group">
-          <button type="submit" class="button">Search</button>
+          <button type="submit" class="button button-gradient-primary">Search</button>
           <a href="dashboard.php?action=products" class="button secondary-button">Clear</a>
         </div>
       </div>
@@ -688,7 +728,7 @@ if ($action === '') {
         <option value="delete">Delete Selected</option>
         <option value="export">Export Selected to CSV</option>
       </select>
-      <button type="submit" class="button" onclick="return confirmBulkAction();">Apply</button>
+      <button type="submit" class="button button-gradient-primary" onclick="return confirmBulkAction();">Apply</button>
     </div>
     
     <div class="card">
@@ -867,16 +907,16 @@ if ($action === '') {
   <p>Here is a comprehensive overview of your business performance.</p>
   
   <!-- Sales Analytics Cards -->
-  <div class="row g-4 mb-4">
+  <div class="row g-4 mb-4 sales-analytics-cards">
     <div class="col-xl-3 col-lg-6 col-md-6">
       <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
-            <i class="fas fa-dollar-sign fa-2x text-danger"></i>
+            <i class="fas fa-dollar-sign fa-2x text-white"></i>
           </div>
-          <h5 class="card-title text-danger">Total Revenue</h5>
-          <h2 class="text-danger mb-0">$<?= number_format($total_revenue, 2) ?></h2>
-          <small class="text-muted">All time earnings</small>
+          <h5 class="card-title text-white">Total Revenue</h5>
+          <h2 class="text-white mb-0">$<?= number_format($total_revenue, 2) ?></h2>
+          <small class="text-white-50">All time earnings</small>
         </div>
       </div>
     </div>
@@ -885,11 +925,11 @@ if ($action === '') {
       <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
-            <i class="fas fa-shopping-cart fa-2x text-danger"></i>
+            <i class="fas fa-shopping-cart fa-2x text-white"></i>
           </div>
-          <h5 class="card-title text-danger">Orders This Month</h5>
-          <h2 class="text-danger mb-0"><?= $orders_this_month ?></h2>
-          <small class="text-muted">Current month</small>
+          <h5 class="card-title text-white">Orders This Month</h5>
+          <h2 class="text-white mb-0"><?= $orders_this_month ?></h2>
+          <small class="text-white-50">Current month</small>
         </div>
       </div>
     </div>
@@ -898,24 +938,24 @@ if ($action === '') {
       <div class="card h-100" style="border-top: 4px solid #cb2121;">
         <div class="card-body text-center">
           <div class="mb-2">
-            <i class="fas fa-calculator fa-2x text-danger"></i>
+            <i class="fas fa-calculator fa-2x text-white"></i>
           </div>
-          <h5 class="card-title text-danger">Average Order Value</h5>
-          <h2 class="text-danger mb-0">$<?= number_format($avg_order_value ?? 0, 2) ?></h2>
-          <small class="text-muted">Per order average</small>
+          <h5 class="card-title text-white">Average Order Value</h5>
+          <h2 class="text-white mb-0">$<?= number_format($avg_order_value ?? 0, 2) ?></h2>
+          <small class="text-white-50">Per order average</small>
         </div>
       </div>
     </div>
     
     <div class="col-xl-3 col-lg-6 col-md-6">
-      <div class="card h-100" style="border-top: 4px solid #cb2121;">
+      <div class="card h-100" style="border-top: 4px solid #ffffff;">
         <div class="card-body text-center">
           <div class="mb-2">
-            <i class="fas fa-chart-line fa-2x text-danger"></i>
+            <i class="fas fa-chart-line fa-2x text-white"></i>
           </div>
-          <h5 class="card-title text-danger">Conversion Rate</h5>
-          <h2 class="text-danger mb-0"><?= number_format($conversion_rate, 1) ?>%</h2>
-          <small class="text-muted">Customer conversion</small>
+          <h5 class="card-title text-white">Conversion Rate</h5>
+          <h2 class="text-white mb-0"><?= number_format($conversion_rate, 1) ?>%</h2>
+          <small class="text-white-50">Customer conversion</small>
         </div>
       </div>
     </div>
@@ -924,21 +964,21 @@ if ($action === '') {
   <!-- Inventory Stats Cards -->
   <div class="stat-container">
       <div class="stat-box">
-          <div class="stat-icon">📦</div>
+          <div class="stat-icon"><i class="fas fa-boxes"></i></div>
           <div>
               <h3>Total Products</h3>
               <p><?= $total_products ?></p>
           </div>
       </div>
       <div class="stat-box">
-          <div class="stat-icon">🗂️</div>
+          <div class="stat-icon"><i class="fas fa-folder-open"></i></div>
           <div>
               <h3>Total Categories</h3>
               <p><?= $total_categories ?></p>
           </div>
       </div>
       <div class="stat-box">
-          <div class="stat-icon">💰</div>
+          <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
           <div>
               <h3>Inventory Value</h3>
               <p>$<?= number_format($total_value ?? 0, 2) ?></p>
@@ -1074,7 +1114,7 @@ if ($action === '') {
 
         <!-- No Alerts Message -->
         <?php if (empty($low_stock_products) && empty($out_of_stock_products) && empty($best_selling_products)): ?>
-          <div class="alert alert-info">
+          <div class="stat-box">
             <h5 class="alert-heading">✅ All Good!</h5>
             <p class="mb-0">No inventory alerts at this time. Your stock levels look good!</p>
           </div>
@@ -1127,13 +1167,20 @@ if ($action === '') {
             label: 'Products',
             data: <?= $chart_values; ?>,
             backgroundColor: [
-              '#007bff',
-              '#28a745',
-              '#ffc107',
-              '#dc3545',
-              '#17a2b8',
-              '#6c757d',
-              '#343a40'
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)'
             ],
             borderWidth: 1
           }]

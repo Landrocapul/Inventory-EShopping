@@ -200,7 +200,7 @@ if ($user_role === 'seller' || $user_role === 'admin') {
         <label for="email">Email</label>
         <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required />
       </div>
-      <button type="submit" name="update_profile" class="button">Update Profile</button>
+      <button type="submit" name="update_profile" class="button button-gradient-primary">Update Profile</button>
     </form>
   </div>
 </div>
@@ -221,7 +221,7 @@ if ($user_role === 'seller' || $user_role === 'admin') {
         <label for="confirm_password">Confirm New Password</label>
         <input type="password" id="confirm_password" name="confirm_password" required />
       </div>
-      <button type="submit" name="change_password" class="button">Change Password</button>
+      <button type="submit" name="change_password" class="button button-gradient-primary">Change Password</button>
     </form>
   </div>
 </div>
