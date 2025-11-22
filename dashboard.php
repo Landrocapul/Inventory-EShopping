@@ -8,6 +8,12 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['seller', 'adm
     exit;
 }
 
+// Check if database is available
+if (!$pdo) {
+    header("Location: index.php");
+    exit;
+}
+
 $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 $action = $_GET['action'] ?? ''; // Define $action from URL parameter

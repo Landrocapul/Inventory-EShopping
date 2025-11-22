@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $register_error = "Invalid email.";
     } elseif (!in_array($role, ['consumer', 'seller'])) {
         $register_error = "Invalid account type.";
+    } elseif (!$pdo) {
+        $register_error = "Database not available. Please try again later.";
     } else {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE username = :username OR email = :email");
         $stmt->execute(['username' => $username, 'email' => $email]);

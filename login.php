@@ -16,27 +16,31 @@ $login_error = '';
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $user = trim($_POST['user']);
-    $pass = $_POST['pass'];
-
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :user OR email = :user");
-    $stmt->execute(['user' => $user]);
-    $account = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($account && password_verify($pass, $account['password'])) {
-        $_SESSION['user_id'] = $account['id'];
-        $_SESSION['username'] = $account['username'];
-        $_SESSION['role'] = $account['role'];
-
-        // Redirect based on role
-        if ($account['role'] === 'seller' || $account['role'] === 'admin') {
-            header("Location: dashboard.php");
-        } else {
-            header("Location: shop.php");
-        }
-        exit;
+    if (!$pdo) {
+        $login_error = "Database not available. Please try again later.";
     } else {
-        $login_error = "Invalid credentials.";
+        $user = trim($_POST['user']);
+        $pass = $_POST['pass'];
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :user OR email = :user");
+        $stmt->execute(['user' => $user]);
+        $account = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($account && password_verify($pass, $account['password'])) {
+            $_SESSION['user_id'] = $account['id'];
+            $_SESSION['username'] = $account['username'];
+            $_SESSION['role'] = $account['role'];
+
+            // Redirect based on role
+            if ($account['role'] === 'seller' || $account['role'] === 'admin') {
+                header("Location: dashboard.php");
+            } else {
+                header("Location: shop.php");
+            }
+            exit;
+        } else {
+            $login_error = "Invalid credentials.";
+        }
     }
 }
 ?>
